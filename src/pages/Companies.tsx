@@ -5,8 +5,32 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-
+import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
+import { CATEGORIES } from "@/constants/categories";
 const Companies = () => {
+  const [jobTitle, setJobTitle] = useState("");
+  const [requirements, setRequirements] = useState<Record<string, number>>(() => {
+    const init: Record<string, number> = {};
+    CATEGORIES.forEach((c) => (init[c] = 5));
+    return init;
+  });
+  const { toast } = useToast();
+
+  const saveJob = () => {
+    const jobs = JSON.parse(localStorage.getItem("jobs") || "[]");
+    const newJob = {
+      id: Date.now(),
+      title: jobTitle || "Untitled Role",
+      company: "Your Company",
+      location: "Remote",
+      salary: "—",
+      requirements,
+    };
+    localStorage.setItem("jobs", JSON.stringify([...(Array.isArray(jobs) ? jobs : []), newJob]));
+    toast({ title: "Job saved", description: "Candidates will see it ranked by similarity." });
+  };
+
   return (
     <div>
       <SEO
@@ -60,27 +84,38 @@ const Companies = () => {
         <Card>
           <CardHeader>
             <CardTitle>Post a job</CardTitle>
-            <CardDescription>Define must-haves, nice-to-haves, and experience</CardDescription>
+            <CardDescription>Define minimum category requirements and experience</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
             <div className="space-y-2">
               <Label>Title</Label>
-              <Input placeholder="e.g. Senior Backend Engineer" />
-            </div>
-            <div className="space-y-2">
-              <Label>Must-have skills</Label>
-              <Input placeholder="e.g. Node.js, PostgreSQL" />
-            </div>
-            <div className="space-y-2">
-              <Label>Nice-to-have skills</Label>
-              <Input placeholder="e.g. GraphQL, AWS" />
+              <Input placeholder="e.g. Senior Backend Engineer" value={jobTitle} onChange={(e)=>setJobTitle(e.target.value)} />
             </div>
             <div className="space-y-2">
               <Label>Years of experience required 4</Label>
               <Slider defaultValue={[4]} max={15} step={1} />
             </div>
+            <div className="space-y-2">
+              <Label>Minimum required score per category</Label>
+              <div className="max-h-[420px] overflow-auto pr-1 grid gap-4">
+                {CATEGORIES.map((c) => (
+                  <div key={c} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground mr-4">{c}</span>
+                      <span className="font-medium">{requirements[c]}</span>
+                    </div>
+                    <Slider
+                      defaultValue={[requirements[c]]}
+                      max={10}
+                      step={1}
+                      onValueChange={(v) => setRequirements((r) => ({ ...r, [c]: v[0] }))}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="flex justify-end">
-              <Button variant="hero">Preview listing</Button>
+              <Button variant="hero" onClick={saveJob}>Save job</Button>
             </div>
           </CardContent>
         </Card>

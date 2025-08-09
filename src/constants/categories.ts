@@ -1,0 +1,35 @@
+export const CATEGORIES = [
+  "Machine Learning Fundamentals",
+  "Deep Learning Architectures",
+  "Natural Language Processing",
+  "Computer Vision",
+  "Reinforcement Learning",
+  "Data Engineering",
+  "Data Visualization",
+  "Feature Engineering",
+  "Model Deployment & MLOps",
+  "Cloud Platforms (AWS/Azure/GCP)",
+  "Big Data Technologies",
+  "Programming in Python",
+  "Programming in R",
+  "Programming in C++/Java",
+  "Mathematics for ML (Linear Algebra, Calculus, Probability)",
+  "Statistics & Hypothesis Testing",
+  "Optimization Techniques",
+  "Prompt Engineering",
+  "AI Ethics & Fairness",
+  "Research & Paper Implementation",
+  "Experiment Design & A/B Testing",
+  "Domain Expertise (e.g., healthcare, finance, robotics)",
+  "Real-time Data Processing",
+  "Team Collaboration Skills",
+  "Communication of Technical Concepts",
+  "Problem-solving & Critical Thinking",
+  "Innovation & Experimentation Appetite",
+  "Work Pace Preference (fast-paced higher value, steady lower value)",
+  "Commitment to Continuous Learning",
+] as const;
+
+export type Category = typeof CATEGORIES[number];
+
+export type ScoreMap = Record<Category, number>;

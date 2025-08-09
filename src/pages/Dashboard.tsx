@@ -11,7 +11,8 @@ import {
   PolarRadiusAxis,
   ResponsiveContainer,
 } from "recharts";
-
+import { useToast } from "@/components/ui/use-toast";
+import { CATEGORIES } from "@/constants/categories";
 const radarData = [
   { trait: "Pace", user: 7, typical: 5 },
   { trait: "Autonomy", user: 8, typical: 6 },
@@ -22,7 +23,43 @@ const radarData = [
 
 const Dashboard = () => {
   const [skills, setSkills] = useState({ React: 7, "Data Viz": 5, Leadership: 6 });
+  const [cvLoading, setCvLoading] = useState(false);
+  const [cvScores, setCvScores] = useState<Record<string, number> | null>(() => {
+    try {
+      const saved = localStorage.getItem("userScores");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const { toast } = useToast();
 
+  const handleCvUpload = async (file: File) => {
+    if (!file) return;
+    setCvLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/functions/v1/parse-cv-gemini", {
+        method: "POST",
+        body: fd,
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error(txt || "Failed to analyze CV");
+      }
+      const data = await res.json();
+      const scores = data.scores as Record<string, number>;
+      setCvScores(scores);
+      localStorage.setItem("userScores", JSON.stringify(scores));
+      toast({ title: "CV analyzed", description: "Scores updated from Gemini." });
+    } catch (e) {
+      console.error(e);
+      toast({ title: "CV analysis failed", description: "Please set GEMINI_API_KEY in Supabase secrets and try again.", variant: "destructive" as any });
+    } finally {
+      setCvLoading(false);
+    }
+  };
   return (
     <div>
       <SEO
@@ -75,10 +112,29 @@ const Dashboard = () => {
               htmlFor="cv"
               className="block rounded-lg border border-dashed p-8 text-center cursor-pointer bg-secondary/40 hover:bg-secondary/60 interactive"
             >
-              <div className="text-sm text-muted-foreground">Drag & drop your CV here, or click to browse</div>
+              <div className="text-sm text-muted-foreground">{cvLoading ? "Analyzing CV with Gemini..." : "Drag & drop your CV here, or click to browse"}</div>
               <div className="mt-2 text-xs text-muted-foreground">PDF or DOCX · Max 5MB</div>
-              <input id="cv" type="file" className="hidden" accept=".pdf,.doc,.docx" />
+              <input
+                id="cv"
+                type="file"
+                className="hidden"
+                accept=".pdf,.doc,.docx"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleCvUpload(f);
+                }}
+              />
             </label>
+            {cvScores && (
+              <div className="mt-6 grid gap-3 md:grid-cols-2">
+                {CATEGORIES.map((c) => (
+                  <div key={c} className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">{c}</span>
+                    <span className="font-medium">{Math.round(((cvScores?.[c] ?? 0) + Number.EPSILON) * 10) / 10}/10</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
